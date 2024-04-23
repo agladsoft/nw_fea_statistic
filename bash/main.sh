@@ -1,6 +1,6 @@
 #!/bin/bash
 
-xls_path="${XL_IDP_PATH_NW_FEA}/"
+xls_path="${XL_IDP_PATH_NW_FEA}"
 
 done_path="${xls_path}"/done
 if [ ! -d "$done_path" ]; then
@@ -24,7 +24,7 @@ do
   echo "'${file} - ${mime_type}'"
 
 	# Will convert csv to json
-	python3 ${XL_IDP_ROOT_EXPORT}/scripts/main.py "${file}" "${json_path}"
+	python3 ${XL_IDP_PATH_NW_FEA}/scripts/main.py "${file}" "${json_path}"
 
   if [ $? -eq 0 ]
 	then
