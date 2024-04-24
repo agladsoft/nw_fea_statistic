@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 xls_path="${XL_IDP_PATH_NW_FEA}/"
 
