@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-xls_path="${XL_IDP_PATH_NW_FEA}/"
+xls_path="${XL_IDP_PATH_NW_FEA}"
 
 done_path="${xls_path}"/done
 if [ ! -d "$done_path" ]; then
@@ -12,7 +12,7 @@ if [ ! -d "$json_path" ]; then
   mkdir "${json_path}"
 fi
 
-find "${xls_path}" -maxdepth 1 -type f \( -name "*.xls*" -or -name "*.XLS*" \) ! -newermt '3 seconds ago' -print0 | while read  $'\0' file
+find "${xls_path}" -maxdepth 1 -type f \( -name "*.xls*" -or -name "*.XLS*" \) ! -newermt '3 seconds ago' -print0 | while read -d $'\0' file
 do
 
   if [[ "${file}" == *"error_"* ]];
