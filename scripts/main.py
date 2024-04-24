@@ -127,6 +127,8 @@ class Statistics:
         result_df = result_df.drop(0)
         result_df.reset_index(drop=True, inplace=True)
         result_df.fillna(0, inplace=True)
+        if 'DAL ZAVOD' in result_df.columns:
+            result_df.rename(columns={'DAL ZAVOD': 'DAL_ZAVOD'}, inplace=True)
         df_dict = result_df.to_dict(orient='records')
         return df_dict
 
@@ -150,10 +152,11 @@ class Statistics:
 
     def filter_data_to_period(self, dict_data, sheet_name):
         period = self.period.nw_period if 'NW' in sheet_name else self.period.fea_period
+        if not period:
+            return dict_data
         period_time = datetime.strptime(period, '%Y-%m')
-        new_date = period_time.replace(year=period_time.year - 1)
         filter_dict_data = [list(key)[0] for key in dict_data if
-                            datetime.strptime(list(key)[0], '%b %Y') >= new_date]
+                            datetime.strptime(list(key)[0], '%b %Y') > period_time]
         dict_data = [key for key in dict_data if list(key)[0] in filter_dict_data]
         return dict_data
 
@@ -163,6 +166,8 @@ class Statistics:
             parse_data = self.parse_data(all_sheets[sheet_name])
             filter_data = self.filter_data_to_period(parse_data, sheet_name)
             result = self.add_new_columns(filter_data)
+            if not result:
+                continue
             self.write_to_json(sheet_name.lower(), result)
 
 

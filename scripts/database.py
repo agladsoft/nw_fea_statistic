@@ -52,6 +52,8 @@ class ClickHouse:
     @staticmethod
     def get_information_to_table(query: QueryResult) -> str:
         result: List[Tuple[int]] = query.result_rows
+        if not result:
+            return []
         result = sorted(result, key=lambda x: (-x[1], -x[0]))[0]
         last_date = datetime(year=result[1], month=result[0], day=1).strftime('%Y-%m')
         return last_date
