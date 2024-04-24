@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from typing import List, Optional, Tuple, Any
 
+import app_logger
 import httpx
 import os
 from clickhouse_connect import get_client
@@ -10,6 +11,8 @@ from clickhouse_connect.driver.query import QueryResult
 from dotenv import load_dotenv
 
 load_dotenv()
+logger: app_logger = app_logger.get_logger(os.path.basename(__file__).replace(".py", "_") + str(datetime.now().date()))
+
 
 class MissingEnvironmentVariable(Exception):
     pass
@@ -20,7 +23,9 @@ def get_my_env_var(var_name: str, default: Any = None) -> str:
         return os.environ[var_name]
     except KeyError as e:
         if default is None:
+            logger.info(f'{var_name} does not exist')
             raise MissingEnvironmentVariable(f'{var_name} does not exist') from e
+
         else:
             return str(default)
 
@@ -34,23 +39,28 @@ class ClickHouse:
 
     @staticmethod
     def connect_db() -> Client:
+        logger.info('Connect to ClickHouse')
         try:
             client: Client = get_client(host=get_my_env_var('HOST'), database=get_my_env_var('DATABASE'),
                                         username=get_my_env_var('USERNAME_DB'), password=get_my_env_var('PASSWORD'))
         except httpx.ConnectError as ex_connect:
+            logger.info(f'Connection error {ex_connect}')
             sys.exit(1)
         return client
 
     def get_nw_period(self) -> str:
+        logger.info('Get period for NW')
         query: QueryResult = self.client.query('SELECT month,year from nw_statistic group by month,year')
         return self.get_information_to_table(query)
 
     def get_fea_period(self) -> str:
+        logger.info('Get period for FEA')
         query: QueryResult = self.client.query('SELECT month,year from fea_statistic group by month,year')
         return self.get_information_to_table(query)
 
     @staticmethod
     def get_information_to_table(query: QueryResult) -> str:
+        logger.info('Get information to table')
         result: List[Tuple[int]] = query.result_rows
         if not result:
             return []

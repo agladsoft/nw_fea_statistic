@@ -1,13 +1,14 @@
 import json
 import os
 import sys
+import app_logger
+import pandas as pd
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 from database import ClickHouse
 
-import pandas as pd
-
 # pd.set_option('future.no_silent_downcasting', True)
+logger: app_logger = app_logger.get_logger(os.path.basename(__file__).replace(".py", "_") + str(datetime.now().date()))
 
 
 class Statistics:
@@ -31,11 +32,15 @@ class Statistics:
         self.total = []
         self.period = ClickHouse()
 
-    def create_new_key(self, index):
+    def create_new_key(self, index: int) -> str:
+        """Create new key for json."""
+        logger.info('Create new key for json')
         key = list(self.month_position)[index]
         return ' '.join([key, self.month_position[key]['year']])
 
-    def get_start_end_position(self, index):
+    def get_start_end_position(self, index: int) -> tuple:
+        """Get start and end position for month."""
+        logger.info('Get start and end position for month')
         list_month = list(self.month_position)
         try:
             start_index = self.month_position[list_month[index]]['column']
@@ -51,12 +56,15 @@ class Statistics:
         """
         Write data to json.
         """
+        logger.info('Write data to json')
         basename: str = os.path.basename(f"{self.input_file_path}_{direction}")
         output_file_path: str = os.path.join(self.output_folder, f'{basename}.json')
         with open(f"{output_file_path}", 'w', encoding='utf-8') as f:
             json.dump(parsed_data, f, ensure_ascii=False, indent=4)
 
-    def delete_total_index(self, end_index, df: pd.DataFrame):
+    def delete_total_index(self, end_index, df: pd.DataFrame) -> pd.DataFrame:
+        """Delete total index from df."""
+        logger.info('Delete total index from df')
         if not end_index:
             df = df.iloc[min(self.total) + 3:]
             self.total.pop(self.total.index(min(self.total)))
@@ -64,13 +72,17 @@ class Statistics:
         return df
 
     @staticmethod
-    def get_month_and_year(data_str: dict):
+    def get_month_and_year(data_str: dict) -> tuple:
+        """Get month and year from data_str."""
+        logger.info('Get month and year from data_str')
         date_obj = datetime.strptime(list(data_str.keys())[0], '%b %Y')
         month_num = date_obj.month
         year_num = date_obj.year
         return month_num, year_num
 
-    def add_new_columns(self, data_year: List[dict]):
+    def add_new_columns(self, data_year: List[dict]) -> List[dict]:
+        """Add new columns to data."""
+        logger.info('Add new columns to data')
         result = []
         for data_month in data_year:
             month, year = self.get_month_and_year(data_month)
@@ -85,7 +97,9 @@ class Statistics:
                 result.append(data)
         return result
 
-    def get_df_month(self, df: pd.DataFrame, start_index, end_index):
+    def get_df_month(self, df: pd.DataFrame, start_index: Optional[int], end_index: Optional[int]) -> pd.DataFrame:
+        """Get df month."""
+        logger.info('Get period from df month')
         if not end_index:
             df_month = df.iloc[:, start_index:]
         else:
@@ -97,12 +111,16 @@ class Statistics:
 
         return df_month
 
-    def get_df_ship_name(self, df: pd.DataFrame):
+    def get_df_ship_name(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Get df ship name."""
+        logger.info('Get ship name from df')
         df_ship_name = df.iloc[:min(self.total) + 1, 0]
         df_ship_name.iloc[1] = 'shipping_line'
         return df_ship_name
 
-    def parse_data(self, df: pd.DataFrame):
+    def parse_data(self, df: pd.DataFrame) -> List[Dict[str, List[Dict[str, str]]]]:
+        """Parse data from df."""
+        logger.info('Start parsing data')
         result_month = []
         df = self.get_month_coordinates(df)
         for index in range(len(self.month_position)):
@@ -115,10 +133,13 @@ class Statistics:
             df = self.delete_total_index(end_index, df)
             df_dict = self.get_information_to_df(df_ship_name, df_month)
             result_month.append({self.create_new_key(index): df_dict})
+        logger.info('End parsing data')
         return result_month
 
     @staticmethod
-    def get_information_to_df(df_ship_name, df_month):
+    def get_information_to_df(df_ship_name: pd.DataFrame, df_month: pd.DataFrame) -> List[Dict[str, str]]:
+        """Get information to df."""
+        logger.info('Work with df_ship_name and df_month')
         result_df = pd.concat([df_ship_name, df_month], axis=1, ignore_index=True).iloc[1:]
         result_df: pd.DataFrame = result_df.dropna(how='all')
         result_df.dropna(axis='columns', how='all', inplace=True)
@@ -130,12 +151,17 @@ class Statistics:
         if 'DAL ZAVOD' in result_df.columns:
             result_df.rename(columns={'DAL ZAVOD': 'DAL_ZAVOD'}, inplace=True)
         df_dict = result_df.to_dict(orient='records')
+        logger.info('End work with df_ship_name and df_month')
         return df_dict
 
-    def check_month(self, index: int):
+    def check_month(self, index: int) -> bool:
+        """Check month."""
+        logger.info('Check month')
         return not self.month_position[list(self.month_position)[index]]
 
-    def get_month_coordinates(self, df: pd.DataFrame):
+    def get_month_coordinates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Get month coordinates."""
+        logger.info('Find all month coordinates in df')
         for index, row in df.iterrows():
             for column_name, value in row.items():
                 for key in self.month_position:
@@ -148,9 +174,12 @@ class Statistics:
                             if index not in self.total:
                                 self.total.append(index)
         df = df.iloc[:max(self.total) + 1]
+        logger.info('End find all month coordinates in df')
         return df
 
-    def filter_data_to_period(self, dict_data, sheet_name):
+    def filter_data_to_period(self, dict_data: list, sheet_name: str) -> list:
+        """Filter data to period."""
+        logger.info('Filter data to period')
         period = self.period.nw_period if 'NW' in sheet_name else self.period.fea_period
         if not period:
             return dict_data
@@ -161,8 +190,11 @@ class Statistics:
         return dict_data
 
     def main(self):
+        """Main function."""
+        logger.info(f"Start parsing file {self.input_file_path}")
         all_sheets = pd.read_excel(self.input_file_path, sheet_name=None, skiprows=1)
         for sheet_name in all_sheets:
+            logger.info(f"Start parsing sheet {sheet_name}")
             parse_data = self.parse_data(all_sheets[sheet_name])
             filter_data = self.filter_data_to_period(parse_data, sheet_name)
             result = self.add_new_columns(filter_data)
