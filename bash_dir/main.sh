@@ -12,8 +12,7 @@ if [ ! -d "$json_path" ]; then
   mkdir "${json_path}"
 fi
 
-IFS=$'\0'
-for file in $(find "${xls_path}" -maxdepth 1 -type f \( -name "*.xls*" -or -name "*.XLS*" \) ! -newermt '3 seconds ago' -print0)
+find "${xls_path}" -maxdepth 1 -type f \( -name "*.xls*" -or -name "*.XLS*" \) ! -newermt '3 seconds ago' -print0 | while read -d $'\0' file
 do
 
   if [[ "${file}" == *"error_"* ]];
