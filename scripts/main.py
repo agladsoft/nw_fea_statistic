@@ -89,6 +89,8 @@ class Statistics:
             list_values = list(data_month.values())[0] if list(data_month.values()) else []
             for values in list_values:
                 data = {}
+                if values.get('shipping_line') == 'TOTAL':
+                    continue
                 data.update(values)
                 data['month'] = month
                 data['year'] = year
