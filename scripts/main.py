@@ -88,15 +88,20 @@ class Statistics:
             month, year = self.get_month_and_year(data_month)
             list_values = list(data_month.values())[0] if list(data_month.values()) else []
             for values in list_values:
-                data = {}
                 if values.get('shipping_line') == 'TOTAL':
                     continue
-                data.update(values)
-                data['month'] = month
-                data['year'] = year
-                data['original_file_name'] = os.path.basename(self.input_file_path)
-                data['original_file_parsed_on'] = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                result.append(data)
+                values.pop('TOTAL')
+                ship_line = values.pop('shipping_line')
+                for k, v in values.items():
+                    data = {
+                        'terminal': k,
+                        'value': v,
+                        'shipping_line': ship_line,
+                        'month': month,
+                        'year': year,
+                        'original_file_name': os.path.basename(self.input_file_path),
+                        'original_file_parsed_on': str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))}
+                    result.append(data)
         return result
 
     def get_df_month(self, df: pd.DataFrame, start_index: Optional[int], end_index: Optional[int]) -> pd.DataFrame:
@@ -195,6 +200,8 @@ class Statistics:
         """Main function."""
         logger.info(f"Start parsing file {self.input_file_path}")
         all_sheets = pd.read_excel(self.input_file_path, sheet_name=None, skiprows=1)
+        if len(all_sheets) != 2:
+            raise ValueError('The number of sheets in the file exceeds two')
         for sheet_name in all_sheets:
             logger.info(f"Start parsing sheet {sheet_name}")
             parse_data = self.parse_data(all_sheets[sheet_name])
