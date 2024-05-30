@@ -196,6 +196,25 @@ class Statistics:
         dict_data = [key for key in dict_data if list(key)[0] in filter_dict_data]
         return dict_data
 
+    def filter_data_to_empty(self, dict_data: list) -> list:
+        filter_month = []
+        for month in dict_data:
+            for terminal in list(month.values()):
+                for values in terminal:
+                    result = list(filter(self.filter_data, list(values.values())))
+                    if sum(result) > 0:
+                        break
+                else:
+                    filter_month.extend(list(month))
+        dict_data = [data for data in dict_data if list(data)[0] not in filter_month]
+        return dict_data
+
+    @staticmethod
+    def filter_data(item: int) -> bool:
+        if isinstance(item, int):
+            return True
+        return False
+
     def main(self):
         """Main function."""
         logger.info(f"Start parsing file {self.input_file_path}")
@@ -206,6 +225,7 @@ class Statistics:
             logger.info(f"Start parsing sheet {sheet_name}")
             parse_data = self.parse_data(all_sheets[sheet_name])
             filter_data = self.filter_data_to_period(parse_data, sheet_name)
+            filter_data_empty = self.filter_data_to_empty(filter_data)
             result = self.add_new_columns(filter_data)
             if not result:
                 continue
