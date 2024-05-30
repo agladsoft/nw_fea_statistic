@@ -226,7 +226,7 @@ class Statistics:
             parse_data = self.parse_data(all_sheets[sheet_name])
             filter_data = self.filter_data_to_period(parse_data, sheet_name)
             filter_data_empty = self.filter_data_to_empty(filter_data)
-            result = self.add_new_columns(filter_data)
+            result = self.add_new_columns(filter_data_empty)
             if not result:
                 continue
             self.write_to_json(sheet_name.lower(), result)
