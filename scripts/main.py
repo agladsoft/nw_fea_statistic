@@ -31,6 +31,7 @@ class Statistics:
         }
         self.total = []
         self.period = ClickHouse()
+        self.sheet_name = None
 
     def create_new_key(self, index: int) -> str:
         """Create new key for json."""
@@ -113,8 +114,11 @@ class Statistics:
             df_month = df.iloc[:, start_index: end_index]
         df_month = df_month.iloc[:min(self.total) + 1]
 
-        if len(df_month.iloc[0]) > 11:
+        if len(df_month.iloc[0]) > 11 and self.sheet_name and 'NW' in self.sheet_name.upper():
             df_month = df_month.iloc[:, : 11]
+
+        if len(df_month.iloc[0]) > 9 and self.sheet_name and 'FEA' in self.sheet_name.upper():
+            df_month = df_month.iloc[:, : 9]
 
         return df_month
 
@@ -222,6 +226,7 @@ class Statistics:
         if len(all_sheets) != 2:
             raise ValueError('The number of sheets in the file exceeds two')
         for sheet_name in all_sheets:
+            self.sheet_name = sheet_name
             logger.info(f"Start parsing sheet {sheet_name}")
             parse_data = self.parse_data(all_sheets[sheet_name])
             filter_data = self.filter_data_to_period(parse_data, sheet_name)
