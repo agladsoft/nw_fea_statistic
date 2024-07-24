@@ -96,7 +96,7 @@ class Statistics:
                 for k, v in values.items():
                     data = {
                         'terminal': k,
-                        'value': v,
+                        'value': int(v),
                         'shipping_line': ship_line,
                         'month': month,
                         'year': year,
